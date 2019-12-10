@@ -1,4 +1,6 @@
+
 #pragma comment(linker, "/SUBSYSTEM:WINDOWS /ENTRY:mainCRTStartup")
+
 
 #include "stdafx.h"
 
@@ -6,14 +8,13 @@
 #include <OpenNI.h> // OpenNI2 Header file
 #include <NiTE.h> // NITE2 Header file
 #include <opencv2/opencv.hpp>
+#include <opencv/highgui.h>
 
 #include <GL/gl.h>
 #include <GL/glu.h>
 #include <GL/glut.h>
 
 #include <string.h>
-
-#include <opencv/highgui.h>
 
 #include <mmsystem.h>
 #pragma comment(lib,"winmm.lib") //"winmm.libというライブラリをリンかでリンクする
@@ -63,7 +64,7 @@ double F, a;//力と加速度
 double y = 0;//y座標
 double t = 0;//時間
 
-//背景
+			 //背景
 cv::Mat img, img2;
 
 
@@ -93,6 +94,10 @@ static void DrawString(String str, int w, int h, int x0, int y0)
 //OpenNI2/NITE2を使ってKinectのColor,Depth,User,Skeleton,Combination,Combination_PC,Ballを表示する
 void display(void)
 {
+	//カスケード分類器読み込み
+	CascadeClassifier cascade;
+	cascade.load("C:/Users/hm140/Desktop/project_m/sample/Sample/Sample/cascade_lbp.xml");
+
 	//背景画像
 	img = cv::imread("baseball_back.jpg", 1);
 	img2 = cv::imread("soccer_back.jpg", 1);
@@ -282,7 +287,7 @@ void display(void)
 
 						//サッカー（右脚）
 						if (position == 12 && soccer_status == 0 && baseballFlag == false) {
-							if (tmp_y[12] > tmp_y[10] - 300) { //右膝が右腰より上
+							if (tmp_y[12] > tmp_y[10] - 300) { //右膝が右腰より上 <-ココを分類器を用いて認識する
 								soccerFlag = true;
 								soccer_status = 1;
 								printf("Hizawoageru\n");
@@ -352,7 +357,7 @@ void display(void)
 				scale_z = scale_z * 0.88;
 
 				trans_x += 12.f; //ボールがx軸に沿って動く
-				 //oto
+								 //oto
 				PlaySound(L"baseball.wav", NULL, SND_FILENAME | SND_SYNC | SND_ASYNC); //サウンド
 				printf("Baseball\n");
 
