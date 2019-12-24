@@ -64,8 +64,9 @@ double F, a;//力と加速度
 double y = 0;//y座標
 double t = 0;//時間
 
-			 //背景
+//背景
 cv::Mat img, img2;
+
 
 
 
@@ -94,9 +95,7 @@ static void DrawString(String str, int w, int h, int x0, int y0)
 //OpenNI2/NITE2を使ってKinectのColor,Depth,User,Skeleton,Combination,Combination_PC,Ballを表示する
 void display(void)
 {
-	//カスケード分類器読み込み
-	CascadeClassifier cascade;
-	cascade.load("C:/Users/hm140/Desktop/project_m/sample/Sample/Sample/cascade_lbp.xml");
+
 
 	//背景画像
 	img = cv::imread("baseball_back.jpg", 1);
@@ -136,7 +135,6 @@ void display(void)
 	}
 
 
-
 	// Depth Stream Create and Open
 	openni::VideoStream depthStream;
 	depthStream.create(device, openni::SENSOR_DEPTH);
@@ -162,6 +160,8 @@ void display(void)
 	// But Kinect doesn't support this Function!
 	device.setImageRegistrationMode(openni::IMAGE_REGISTRATION_DEPTH_TO_COLOR);
 
+
+	cv::Mat grayMat;
 	cv::Mat colorMat;
 	cv::Mat depthMat;
 	cv::Mat userMat;
@@ -169,6 +169,7 @@ void display(void)
 
 	//Windowのサイズ
 	cv::namedWindow("Color", cv::WINDOW_NORMAL);
+	cv::namedWindow("Grey", cv::WINDOW_NORMAL);
 	cv::namedWindow("Depth", cv::WINDOW_NORMAL);
 	cv::namedWindow("User", cv::WINDOW_NORMAL);
 	cv::namedWindow("Skeleton", cv::WINDOW_NORMAL);
@@ -194,10 +195,15 @@ void display(void)
 		// Retrieve Frame from Color Stream (8bit 3channel)
 		openni::VideoFrameRef colorFrame;
 		colorStream.readFrame(&colorFrame); // Retrieve a Frame from Stream
+		//cv::cvtColor(入力画像, 出力画像, 色空間を変換する値);
 		if (colorFrame.isValid()) {
 			colorMat = cv::Mat(colorStream.getVideoMode().getResolutionY(), colorStream.getVideoMode().getResolutionX(), CV_8UC3, reinterpret_cast<uchar*>(const_cast<void*>(colorFrame.getData()))); // Retrieve a Data from Frame 
-			cv::cvtColor(colorMat, colorMat, CV_RGB2BGR); // Change the order of the pixel RGB to BGR
+			cv::cvtColor(colorMat, colorMat, CV_RGB2BGR); // Change the order of the pixel RGB to BGR 
+			
+			cv::cvtColor(colorMat, grayMat, CV_BGR2GRAY); // Change the order of the pixel RGB to GRAY
+
 		}
+
 
 		// Retrieve Frame from Depth Stream (16bit 1channel)
 		openni::VideoFrameRef depthFrame;
@@ -461,15 +467,36 @@ void display(void)
 		resize(out_img, out_img, Size(), 3, 1.5); //画面のサイズの拡大縮小
 		glutSwapBuffers();
 
-		//画面表示
-		cv::imshow("Color", colorMat);
+
+
+		//画面表示 //imshow(ウィンドウ名, 表示される画像);
+		cv::imshow("Color", colorMat); //カラー表示
+		cv::imshow("Gray", grayMat); //グレースケール表示
 		cv::imshow("Depth", depthMat);
 		cv::imshow("User", userMat);
 		cv::imshow("Skeleton", skeletonMat);
 		cv::imshow("Combination", out_img); //openGLとopenCVの組み合わせ
 		cv::imshow("Combination_PC", out_img); //PC用Combination
+											   
+											   
+		
+		//分類器の為のグレースケール背景
+		cv::Mat bg = cv::imread("haikei.png");
+		//張り付ける位置
+		int x = 300, y = 150;
+		//背景からはみ出しいないかチェック
+		CV_Assert((x >= 0) && (x + colorMat.cols <= bg.cols));
+		CV_Assert((y >= 0) && (y + colorMat.rows <= bg.rows));
+		//colorMatのサイズ変更
+		cv::resize(colorMat, colorMat, cv::Size(), 0.3, 0.3);
+		//前面画像の画素を背景にコピー
+		cv::Mat roi = bg(cv::Rect(x, y, colorMat.cols, colorMat.rows));
+		colorMat.copyTo(roi);
+		//colorMatをグレースケール化
+		cv::cvtColor(bg, bg, CV_BGR2GRAY);
+		cv::imshow("cascade", bg);
 
-											   // Press the Escape key to Exit
+		// Press the Escape key to Exit
 		if (cv::waitKey(30) == VK_ESCAPE) {
 			break;
 		}
