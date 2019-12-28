@@ -167,9 +167,18 @@ void display(void)
 	cv::Mat userMat;
 	cv::Mat skeletonMat;
 
+
+	//カスケード分類器読み込み
+	CascadeClassifier cascade;
+	cascade.load("C:/Users/hm140/Desktop/project_m/sample/Sample/Sample/cascade_lbp_rgb.xml");
+	//輪郭情報を格納場所
+	vector<Rect> faces;
+
+
+
 	//Windowのサイズ
 	cv::namedWindow("Color", cv::WINDOW_NORMAL);
-	cv::namedWindow("Grey", cv::WINDOW_NORMAL);
+	cv::namedWindow("Gray", cv::WINDOW_NORMAL);
 	cv::namedWindow("Depth", cv::WINDOW_NORMAL);
 	cv::namedWindow("User", cv::WINDOW_NORMAL);
 	cv::namedWindow("Skeleton", cv::WINDOW_NORMAL);
@@ -468,20 +477,9 @@ void display(void)
 		glutSwapBuffers();
 
 
-
-		//画面表示 //imshow(ウィンドウ名, 表示される画像);
-		cv::imshow("Color", colorMat); //カラー表示
-		cv::imshow("Gray", grayMat); //グレースケール表示
-		cv::imshow("Depth", depthMat);
-		cv::imshow("User", userMat);
-		cv::imshow("Skeleton", skeletonMat);
-		cv::imshow("Combination", out_img); //openGLとopenCVの組み合わせ
-		cv::imshow("Combination_PC", out_img); //PC用Combination
-											   
-											   
-		
 		//分類器の為のグレースケール背景
 		cv::Mat bg = cv::imread("haikei.png");
+		cv::Mat bg2;
 		//張り付ける位置
 		int x = 300, y = 150;
 		//背景からはみ出しいないかチェック
@@ -493,8 +491,36 @@ void display(void)
 		cv::Mat roi = bg(cv::Rect(x, y, colorMat.cols, colorMat.rows));
 		colorMat.copyTo(roi);
 		//colorMatをグレースケール化
-		cv::cvtColor(bg, bg, CV_BGR2GRAY);
-		cv::imshow("cascade", bg);
+		cv::cvtColor(bg, bg2, CV_BGR2GRAY);
+		cv::imshow("cascade", bg2); //分類器
+
+		
+								   
+
+		//カスケードファイルに基づいて人のポーズを検知する．検知した情報をベクトルfacesに格納
+		cascade.detectMultiScale(bg2, faces, 1.1, 1, 0, Size(40, 40)); 
+		for (int i = 0; i<faces.size(); i++) //検出した顔の個数"faces.size()"分ループを行う
+		{
+			rectangle(bg2, Point(faces[i].x, faces[i].y), Point(faces[i].x + faces[i].width, faces[i].y + faces[i].height), Scalar(0, 0, 255), 3, CV_AA); //検出した顔を赤色矩形で囲む
+		}
+
+		cv::imshow("kensyutu", bg2);
+
+
+
+
+
+		//画面表示 //imshow(ウィンドウ名, 表示される画像);
+		cv::imshow("Color", colorMat); //カラー表示
+		cv::imshow("Gray", grayMat); //グレースケール表示
+		cv::imshow("Depth", depthMat);
+		cv::imshow("User", userMat);
+		cv::imshow("Skeleton", skeletonMat);
+		cv::imshow("Combination", out_img); //openGLとopenCVの組み合わせ
+		cv::imshow("Combination_PC", out_img); //PC用Combination
+											   
+											   
+
 
 		// Press the Escape key to Exit
 		if (cv::waitKey(30) == VK_ESCAPE) {
